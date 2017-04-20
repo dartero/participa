@@ -41,7 +41,16 @@ Rails.application.configure do
 
   # mailcatcher for testing purposes 
   config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = { :address => "localhost", :port => 1025 }
+  #config.action_mailer.smtp_settings = { :address => "localhost", :port => 1025 }
+  ActionMailer::Base.smtp_settings = {
+    :address              => 'smtp.gmail.com',
+    :user_name            => 'ggalancs@gmail.com',
+    :password             => 'C21b8wyke4hGBBrVPTmy',
+    :domain               => 'gmail.com',
+    :port                 => 587,
+    :authentication       => 'plain',
+    :enable_starttls_auto => true
+  }
   
   BetterErrors::Middleware.allow_ip! Rails.application.secrets.trusted_ip if Rails.application.secrets.trusted_ip
 
