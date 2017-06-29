@@ -189,6 +189,7 @@ class User < ActiveRecord::Base
     parent.table[:vote_town]
   end
 
+  GENDER = { "F" => "Femenino", "M" => "Masculino", "O" => "Otro", "N" => "No contesta" }
   DOCUMENTS_TYPE = [["DNI", 1], ["NIE", 2], ["Pasaporte", 3]]
 
   # Based on 
@@ -363,6 +364,10 @@ class User < ActiveRecord::Base
 
   def document_type_name
     User::DOCUMENTS_TYPE.select{|v| v[1] == self.document_type }[0][0]
+  end
+
+  def gender_name
+    User::GENDER[self.gender]
   end
 
   def in_spain?
@@ -736,4 +741,16 @@ class User < ActiveRecord::Base
   def sms_check_token
     Digest::SHA1.digest("#{sms_check_at}#{id}#{Rails.application.secrets.users['sms_secret_key'] }")[0..3].codepoints.map { |c| "%02X" % c }.join if sms_check_at
   end
+
+  def urban_vote_town?
+    self.vote_town.present? && Podemos::GeoExtra::URBAN_TOWNS.member?(self.vote_town)
+  end
+
+  def semi_urban_vote_town?
+    self.vote_town.present? && Podemos::GeoExtra::SEMI_URBAN_TOWNS.member?(self.vote_town)
+  end
+
+  def rural_vote_town?
+    !self.urban_vote_town? && !self.semi_urban_vote_town?
+  end  
 end

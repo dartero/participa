@@ -22,6 +22,6 @@ config/database.yml
 config/secrets.yml
 
 .vagrant/*
-
+.idea/*
 Gemfile.lock
 .idea/*

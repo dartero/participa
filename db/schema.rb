@@ -605,6 +605,7 @@ ActiveRecord::Schema.define(version: 20170405100949) do
     t.datetime "participation_team_at"
     t.datetime "sms_check_at"
     t.string   "vote_district"
+    t.string   "gender"
   end
 
   add_index "users", ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
