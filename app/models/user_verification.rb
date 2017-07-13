@@ -22,9 +22,9 @@ class UserVerification < ActiveRecord::Base
   end
 
   scope :pending, -> {where(status: 0)}
-  scope :passed, -> {where(status: 1)}
+  scope :accepted, -> {where(status: 1)}
   scope :issues, -> {where(status: 2)}
-  scope :failed, -> {where(status: 3)}
+  scope :rejected, -> {where(status: 3)}
 
   def require_back?
     !user.is_passport?
