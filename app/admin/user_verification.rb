@@ -10,7 +10,7 @@ ActiveAdmin.register UserVerification do
   actions :index, :show, :edit, :update
 
   scope "Todas", :all
-  scope "Pendientes", :pending
+  scope "Pendientes", :pending, default: true
   scope "Aceptadas", :accepted, if: proc {current_user.is_admin?}
   scope "Aceptadas por Email", :accepted_by_email, if: proc {current_user.is_admin?}
   scope "Con Problemas", :issues, if: proc {current_user.is_admin?}
@@ -29,7 +29,6 @@ ActiveAdmin.register UserVerification do
     column "fecha petición", :created_at
 
     column "estado" do |verification|
-
       case UserVerification.statuses[verification.status]
         when UserVerification.statuses[:pending]
           status_tag("Pendiente", :warning)
@@ -62,12 +61,21 @@ ActiveAdmin.register UserVerification do
         render partial: "personal_data"
       end
 
-      column do
-        a target: "_blank", href: view_image_admin_user_verification_path(user_verification, attachment: :front, size: :original) do
-          image_tag view_image_admin_user_verification_path(user_verification, attachment: :front, size: :thumb)
-        end
-        a target: "_blank", href: view_image_admin_user_verification_path(user_verification, attachment: :back, size: :original) do
-          image_tag view_image_admin_user_verification_path(user_verification, attachment: :back, size: :thumb)
+      column class: "column attachments" do
+        [:front, :back].each do |attachment|
+          div class: "attachment" do
+            a class: "preview", target: "_blank", href: view_image_admin_user_verification_path(user_verification, attachment: attachment, size: :original) do
+              image_tag view_image_admin_user_verification_path(user_verification, attachment: attachment, size: :thumb)
+            end
+            div class: "rotate" do
+              span "ROTAR"
+              [0, 90, 180, 270].reverse.each do |degrees|
+                a class: "degrees-#{degrees}", href: rotate_admin_user_verification_path(user_verification, attachment: attachment, degrees: degrees), "data-method" => :patch do
+                  fa_icon "id-card-o"
+                end
+              end
+            end
+          end
         end
       end
     end
@@ -93,6 +101,26 @@ ActiveAdmin.register UserVerification do
         end
       end
       column class: "column attachments" do
+        more_pending = resource.user.user_verifications.pending
+        if more_pending.any? { |verification| verification!=resource }
+          div class: "flash flash_error" do
+            "ATENCIÓN: Este usuario ha enviado varias solicitudes de verificación. Por favor, compruébalas antes de continuar."
+          end
+          table_for more_pending do
+            column "fecha creación", :created_at
+            column "estado" do |verification|
+              t("podemos.user_verification.status.#{verification.status}")
+            end
+            column do |verification|
+              if verification.id == resource.id
+                span "registro actual"
+              else
+                link_to "procesar", edit_admin_user_verification_path(verification.id)
+              end
+            end
+          end
+        end
+
         [:front, :back].each do |attachment|
           div class: "attachment" do
             a class: "preview", target: "_blank", href: view_image_admin_user_verification_path(user_verification, attachment: attachment, size: :original) do
@@ -115,7 +143,7 @@ ActiveAdmin.register UserVerification do
   member_action :rotate, method: :patch do
     verification = UserVerification.find(params[:id])
     attachment = "#{params[:attachment]}_vatid"
-    degrees = params[:degrees].to_i
+    degrees = -params[:degrees].to_i
     verification.rotate[attachment] = degrees
     verification.send(attachment).reprocess!
     redirect_to :back
