@@ -10,7 +10,8 @@ class User < ActiveRecord::Base
             3 => :verified,
             4 => :finances_admin,
             5 => :impulsa_author,
-            6 => :impulsa_admin
+            6 => :impulsa_admin,
+            7 => :verifier
 
   # Include default devise modules. Others available are:
   # :omniauthable
@@ -28,6 +29,7 @@ class User < ActiveRecord::Base
   has_one :collaboration, dependent: :destroy
   has_and_belongs_to_many :participation_team
   has_many :microcredit_loans
+  has_many :user_verifications
 
   validates :first_name, :last_name, :document_type, :document_vatid, presence: true
   validates :address, :postal_code, :town, :province, :country, :born_at, presence: true
@@ -742,6 +744,10 @@ class User < ActiveRecord::Base
     Digest::SHA1.digest("#{sms_check_at}#{id}#{Rails.application.secrets.users['sms_secret_key'] }")[0..3].codepoints.map { |c| "%02X" % c }.join if sms_check_at
   end
 
+  def pass_vatid_check?
+    self.verified || self.user_verifications.pending.any?
+  end
+
   def urban_vote_town?
     self.vote_town.present? && Podemos::GeoExtra::URBAN_TOWNS.member?(self.vote_town)
   end
@@ -752,5 +758,20 @@ class User < ActiveRecord::Base
 
   def rural_vote_town?
     !self.urban_vote_town? && !self.semi_urban_vote_town?
-  end  
+  end
+
+  def has_not_future_verified_elections?
+    !self.has_future_verified_elections?
+  end
+
+  def has_future_verified_elections?
+    Election.future.requires_vatid_check.any? { |e| e.has_valid_location_for? self}
+  end
+
+  def photos_unnecessary?
+    self.has_future_verified_elections? && self.verified && (UserVerification.where(user_id:self.id).none? || UserVerification.accepted_by_email.where(user_id: self.id).any?)
+  end
+  def photos_necessary?
+    self.has_future_verified_elections? && !self.verified  || (UserVerification.where(user_id: self.id).any? && UserVerification.accepted_by_email.where(user_id: self.id).none?)
+  end
 end

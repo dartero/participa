@@ -24,4 +24,5 @@ config/secrets.yml
 .vagrant/*
 .idea/*
 Gemfile.lock
-.idea/*
+.idea
+.DS_Store

@@ -137,8 +137,9 @@ Rails.application.routes.draw do
       get 'verificacion-identidad(/:election_id)', to: 'user_verifications#new', as: 'new_user_verification'
       post 'verificacion-identidad(/:election_id)', to: 'user_verifications#create', as: 'create_user_verification'
       get 'user_verifications/:id/:attachment/:filename', to: 'user_verifications#download_image', as: 'images_user_verification'
+      get Rails.application.secrets.user_verifications["report_page"], to: 'user_verifications#report', as: 'report_user_verification'
     end
-    
+
     scope :impulsa do
       get '', to: 'impulsa#index', as: 'impulsa'
       get 'proyecto', to: 'impulsa#project', as: 'project_impulsa'
